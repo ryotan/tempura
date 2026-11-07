@@ -1,0 +1,88 @@
+name: Workflow Lint
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-lint:
+    name: Workflow Lint
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: shared-workflow-lint-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      MISE_PARANOID: 'true'
+      MISE_ENV: ci-workflow-lint
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          # Review observed endpoints before enabling block mode.
+          egress-policy: audit
+          disable-telemetry: true
+
+      # Install this workflow's toolchain before reading the caller's mise configuration.
+      - name: Checkout common toolchain
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            /.config/mise/
+            /.github/jactionlint.yaml
+          sparse-checkout-cone-mode: false
+
+      - name: Cache mise download store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/workflow-lint/cache/downloads-cas
+          key: workflow-lint-downloads-${{ runner.os }}-${{ runner.arch }}-${{ env.MISE_ENV }}-${{ hashFiles('.config/mise/config*.toml', '.config/mise/mise.lock') }}
+
+      - name: Install common linter
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        env:
+          MISE_CACHE_DIR: ${{ runner.temp }}/workflow-lint/cache
+        with:
+          version: '2026.10.20'
+          install_args: --locked
+          cache: false
+          add_shims_to_path: false
+
+      - name: Preserve common lint configuration
+        run: |
+          LINT_ROOT="$RUNNER_TEMP/workflow-lint"
+          mkdir -p "$LINT_ROOT"
+          cp -- .github/jactionlint.yaml "$LINT_ROOT/jactionlint.yaml"
+          printf 'LINT_ROOT=%s\n' "$LINT_ROOT" >> "$GITHUB_ENV"
+
+      - name: Checkout caller repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check workflows and action metadata
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git ls-files -z -- \
+            ':(top,glob).github/workflows/*.yml' \
+            ':(top,glob).github/workflows/*.yaml' \
+            ':(top,glob)**/action.yml' \
+            ':(top,glob)**/action.yaml' > "$LINT_ROOT/inputs"
+          if [[ ! -s "$LINT_ROOT/inputs" ]]; then
+            echo '::error::No tracked workflow or action metadata files were found.'
+            exit 1
+          fi
+          mapfile -d '' -t inputs < "$LINT_ROOT/inputs"
+          jactionlint --config-file "$LINT_ROOT/jactionlint.yaml" \
+            --strict-exit --no-baseline --shellcheck='' --pyflakes='' -- "${inputs[@]}"

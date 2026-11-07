@@ -1,0 +1,19 @@
+profile: pedantic
+generated-files: report
+online: true
+online-options:
+  mode: strict
+rules:
+  unpinned-uses:
+    level: error
+    actions-lock: false
+  missing-version-comment: error
+  excessive-permissions:
+    level: error
+    require-workflow-permissions: true
+  mutable-runner-label: error
+  # These style choices are outside the shared security and correctness policy.
+  max-run-lines: off
+  require-expression-wrapping: off
+  require-shell: off
+  unused-needs: off

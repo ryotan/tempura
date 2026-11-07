@@ -1,0 +1,104 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  workflow-lint:
+    name: Workflow Lint
+    permissions:
+      contents: read
+    uses: $/.github/workflows/workflow-lint.yaml
+
+  definitions:
+    name: Definitions
+    needs: workflow-lint
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    env:
+      MISE_PARANOID: 'true'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2.22.2
+        with:
+          # Review observed endpoints before switching this new workflow to block mode.
+          egress-policy: audit
+          disable-telemetry: true
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install development tools
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
+        with:
+          version: '2026.10.20'
+          install_args: --locked bun node
+          cache: false
+          add_shims_to_path: false
+
+      - name: Install validation dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Prepare preset validator
+        run: bun run setup:validation
+
+      - name: Validate presets
+        run: mise run check:presets
+
+      - name: Install the configured Copier version
+        run: |
+          COPIER_REQUIREMENT=$(bun -e '
+            import config from "./copier.json5";
+            process.stdout.write(`copier${config.constraints.copier}`);
+          ')
+          python3 -m venv "$RUNNER_TEMP/copier"
+          "$RUNNER_TEMP/copier/bin/python" -m pip install --disable-pip-version-check "$COPIER_REQUIREMENT"
+          printf '%s\n' "$RUNNER_TEMP/copier/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Copier version
+        run: copier --version
+
+      - name: Exercise template delivery
+        run: mise run check:templates
+
+      - name: Generate initial settings
+        if: ${{ github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' }}
+        run: |
+          copier copy --defaults --vcs-ref "$GITHUB_REF_NAME" \
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git" "$RUNNER_TEMP/shared-settings"
+          test -f "$RUNNER_TEMP/shared-settings/.editorconfig"
+          test -f "$RUNNER_TEMP/shared-settings/.copier-answers.shared-settings.yml"
+          {
+            echo '### Initial settings'
+            printf -- '- Source tag: `%s`\n' "$GITHUB_REF_NAME"
+            printf -- '- Source commit: `%s`\n' "$GITHUB_SHA"
+            printf -- '- Copier: `%s`\n' "$(copier --version)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload initial settings
+        if: ${{ github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: shared-settings
+          path: |
+            ${{ runner.temp }}/shared-settings/.editorconfig
+            ${{ runner.temp }}/shared-settings/.copier-answers.shared-settings.yml
+          include-hidden-files: true
+          if-no-files-found: error

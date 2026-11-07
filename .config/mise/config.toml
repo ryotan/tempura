@@ -1,0 +1,31 @@
+[settings]
+auto_install = false
+use_versions_host = false
+minimum_release_age = "7d"
+lockfile = true
+locked = true
+lockfile_platforms = ["linux-x64", "macos-arm64"]
+disable_backends = [
+  "asdf", "vfox", "ubi", "cargo", "npm", "pipx", "gem", "go", "dotnet", "conda", "spm", "http", "s3",
+]
+
+[tools]
+bun = "1.4.2"
+node = "24.22.1"
+"aqua:jdx/jactionlint" = "2.3.0"
+
+[tasks."check:presets"]
+description = "Validate the shared presets and repository Renovate configuration."
+run = "bun run check:presets"
+
+[tasks."check:workflows"]
+description = "Check source workflows offline; CI also requires successful online checks."
+run = "jactionlint --config-file .github/jactionlint.yaml --strict-exit --no-online --no-baseline --shellcheck='' --pyflakes=''"
+
+[tasks."check:workflows:online"]
+description = "Check source workflows with required online lookups."
+run = "jactionlint --config-file .github/jactionlint.yaml --strict-exit --no-baseline --shellcheck='' --pyflakes=''"
+
+[tasks."check:templates"]
+description = "Exercise native Copier template delivery."
+run = "python3 -m unittest discover -s tests -p 'test_template_updates.py' -v"

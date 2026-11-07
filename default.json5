@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "addLabels": ["dependencies"],
+  "commitMessagePrefix": "⬆️(deps): ",
+  "timezone": "Asia/Tokyo",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "rebaseWhen": "behind-base-branch",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {"minimumReleaseAge": "0 days"},
+  "pre-commit": {"enabled": true},
+  "packageRules": [
+    {"matchDatasources": ["npm"], "minimumReleaseAge": "7 days"},
+    // These update types bypass the release-age check; the bypass does not establish code safety.
+    {"matchUpdateTypes": ["pin", "pinDigest", "replacement"], "minimumReleaseAge": null},
+    {"matchUpdateTypes": ["lockFileMaintenance"], "minimumReleaseAge": null},
+    {"matchUpdateTypes": ["digest"], "enabled": false}
+  ]
+}

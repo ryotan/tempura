@@ -1,0 +1,14 @@
+{
+  "name": "repository-standards",
+  "private": true,
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "setup:validation": "npm --prefix node_modules/re2 run install",
+    "check:presets": "npm --prefix node_modules/re2 run verify-build && renovate-config-validator --strict --no-global default.json5 copier.json5 .github/renovate.json5"
+  },
+  "devDependencies": {
+    "re2": "1.27.0",
+    "renovate": "44.190.0"
+  },
+  "trustedDependencies": ["re2"]
+}

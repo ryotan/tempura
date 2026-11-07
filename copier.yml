@@ -1,0 +1,4 @@
+# Keep common definitions and verification assets outside the copied subtree.
+_subdirectory: template
+_answers_file: .copier-answers.shared-settings.yml
+_min_copier_version: '9.19.1'
