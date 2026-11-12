@@ -1,2 +1,2 @@
 [settings]
-enable_tools = ["aqua:jdx/jactionlint"]
+enable_tools = ["python", "uv", "aqua:jdx/jactionlint", "aqua:koalaman/shellcheck"]

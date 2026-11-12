@@ -1,4 +1,9 @@
-# Keep common definitions and verification assets outside the copied subtree.
 _subdirectory: template
 _answers_file: .copier-answers.shared-settings.yml
 _min_copier_version: '9.19.1'
+
+default_branch:
+  type: str
+  help: Default branch used by the project's workflows
+  default: main
+  validator: "{% if not default_branch %}default_branch must not be empty.{% endif %}"

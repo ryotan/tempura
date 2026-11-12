@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  // This runtime constraint applies to every Copier template in an opting-in repository.
+  "constraints": {"copier": "==9.19.1"},
+  "packageRules": [
+    {
+      // Use GitHub tag timestamps to enforce the shared release-age policy.
+      "matchManagers": ["copier"],
+      "matchPackageNames": ["https://github.com/ryotan/tempura", "https://github.com/ryotan/tempura.git"],
+      "overrideDatasource": "github-tags",
+      "overridePackageName": "ryotan/tempura"
+    },
+    {
+      // Copier updates this reference with the other files from the same template release.
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["workflow"],
+      "matchPackageNames": ["ryotan/tempura"],
+      "matchFileNames": [".github/workflows/workflow-lint.yaml"],
+      "enabled": false
+    }
+  ]
+}

@@ -1,7 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>ryotan/repository-standards:default.json5#main"],
+  "extends": ["github>ryotan/tempura//renovate/default.json5#main"],
   "renovate-config": {
-    "managerFilePatterns": ["/^(default|copier)\\.json5$/"]
-  }
+    "managerFilePatterns": ["/^renovate/(default|copier)\\.json5$/"]
+  },
+  "packageRules": [
+    {
+      // Keep the source's tested engine and the consumer runtime on the same release.
+      "matchManagers": ["pep621", "renovate-config"],
+      "matchPackageNames": ["copier"],
+      "groupName": "Copier runtime"
+    }
+  ]
 }

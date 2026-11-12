@@ -12,7 +12,14 @@ disable_backends = [
 [tools]
 bun = "1.4.2"
 node = "24.22.1"
+python = "3.13.18"
+uv = "0.13.7"
 "aqua:jdx/jactionlint" = "2.3.0"
+"aqua:koalaman/shellcheck" = "0.11.0"
+
+[env]
+UV_PYTHON = { value = "{{ tools.python.path }}/bin/python3", tools = true }
+UV_PYTHON_DOWNLOADS = "never"
 
 [tasks."check:presets"]
 description = "Validate the shared presets and repository Renovate configuration."
@@ -20,12 +27,20 @@ run = "bun run check:presets"
 
 [tasks."check:workflows"]
 description = "Check source workflows offline; CI also requires successful online checks."
-run = "jactionlint --config-file .github/jactionlint.yaml --strict-exit --no-online --no-baseline --shellcheck='' --pyflakes=''"
+run = "uv run --locked --only-group workflow-lint jactionlint --config-file .github/jactionlint.yaml --strict-exit --no-online --no-baseline"
 
 [tasks."check:workflows:online"]
 description = "Check source workflows with required online lookups."
-run = "jactionlint --config-file .github/jactionlint.yaml --strict-exit --no-baseline --shellcheck='' --pyflakes=''"
+run = "uv run --locked --only-group workflow-lint jactionlint --config-file .github/jactionlint.yaml --strict-exit --no-baseline"
 
 [tasks."check:templates"]
 description = "Exercise native Copier template delivery."
-run = "python3 -m unittest discover -s tests -p 'test_template_updates.py' -v"
+run = "uv run --locked --only-group copier python -m unittest discover -s tests -p 'test_template_updates.py' -v"
+
+[tasks."generate:settings"]
+description = "Generate initial shared settings with the tested Copier environment."
+run = "uv run --locked --only-group copier copier copy"
+
+[tasks."update:settings"]
+description = "Update shared settings and project answers with the tested Copier environment."
+run = "uv run --locked --only-group copier copier update --skip-answered --answers-file .copier-answers.shared-settings.yml"

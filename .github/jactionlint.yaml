@@ -12,7 +12,6 @@ rules:
     level: error
     require-workflow-permissions: true
   mutable-runner-label: error
-  # These style choices are outside the shared security and correctness policy.
   max-run-lines: off
   require-expression-wrapping: off
   require-shell: off

@@ -1,5 +1,0 @@
-{
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  // This runtime constraint applies to every Copier template in an opting-in repository.
-  "constraints": {"copier": "==9.19.1"}
-}

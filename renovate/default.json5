@@ -12,7 +12,6 @@
   "pre-commit": {"enabled": true},
   "packageRules": [
     {"matchDatasources": ["npm"], "minimumReleaseAge": "7 days"},
-    // These update types bypass the release-age check; the bypass does not establish code safety.
     {"matchUpdateTypes": ["pin", "pinDigest", "replacement"], "minimumReleaseAge": null},
     {"matchUpdateTypes": ["lockFileMaintenance"], "minimumReleaseAge": null},
     {"matchUpdateTypes": ["digest"], "enabled": false}
