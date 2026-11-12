@@ -1,0 +1,18 @@
+name: Workflow Lint
+
+on:
+  push:
+    branches: [{{ default_branch | replace('!', '\\!') | replace('+', '\\+') | to_json }}]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-lint-{% raw %}${{ github.ref }}{% endraw %}
+  cancel-in-progress: {% raw %}${{ github.event_name == 'pull_request' }}{% endraw %}
+
+jobs:
+  workflow-lint:
+    name: Workflow Lint
+    uses: ryotan/tempura/.github/workflows/workflow-lint.yaml@{{ _copier_conf.vcs_ref_hash }} # {{ _copier_answers._commit }}

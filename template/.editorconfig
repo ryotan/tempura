@@ -23,6 +23,9 @@ trim_trailing_whitespace = false
 [*.{bat,cmd}]
 end_of_line = crlf
 
+[*.py]
+indent_size = 4
+
 [*.rs]
 indent_size = 4
 continuation_indent_size = 8
